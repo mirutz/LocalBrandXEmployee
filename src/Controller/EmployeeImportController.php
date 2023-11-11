@@ -25,7 +25,7 @@ class EmployeeImportController extends AbstractController
     public function __invoke(Request $request): Response
     {
         // required due to line-break issues running this on a windows-environment
-        $uploadedFile = str_replace(["\n"], "\r\n", $request->getContent());
+        $uploadedFile = $request->getContent();
 
         $errorEntries = [];
         $cacheCounter = 0;
