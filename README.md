@@ -2,9 +2,14 @@
 Repo for the assessment task of LocalBrandX
 
 
+Requirements:
++ PHP8
++ composer
++ MySql
+
 #### Server installation
 + `composer install`
-+ Create .env file: `cp .env .env.dev.local`
++ Create .env.dev.local file: `cp .env .env.dev.local`
 + update the following line:
   + DATABASE_URL=mysql://[user]:[password]@[host]:[port]/[databasename]?serverVersion=8.0.33
     
