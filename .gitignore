@@ -9,6 +9,10 @@ dist/
 !cache/.gitkeep
 !logs/.gitkeep
 
+# PHPStorm
+.idea
+
+/public/bundles
 # Parameters
 /app/config/parameters.yml
 /app/config/parameters.ini
