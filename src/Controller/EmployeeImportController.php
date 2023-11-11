@@ -10,7 +10,6 @@ use League\Csv\Reader;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Annotation\Route;
 
 class EmployeeImportController extends AbstractController
 {
@@ -25,41 +24,44 @@ class EmployeeImportController extends AbstractController
 
     public function __invoke(Request $request): Response
     {
+        // required due to line-break issues running this on a windows-environment
         $uploadedFile = str_replace(["\n"], "\r\n", $request->getContent());
 
-        $skippedEmployees = [];
         $errorEntries = [];
-        $counter = 0;
+        $cacheCounter = 0;
         $inserts = 0;
+        $updates = 0;
+        $totalRows = 0;
         if (!empty($uploadedFile)) {
             $csv = Reader::createFromString($uploadedFile);
 
             // Assuming the first row contains headers
             $csv->setHeaderOffset(0);
-            $updates = 0;
+
             // Iterate through each row
             foreach ($csv->getRecords() as $record) {
+                $totalRows++;
                 try {
                     $existingEmployee = $this->em->getRepository(Employee::class)->find($record['Emp ID']);
                     $employee = $this->validationService->parseAndValidate($record, $existingEmployee);
                     if ($employee) {
                         if ($employee->getId() === 0) {
-//                            $errorEntries[] = $employee;
+                            // if "Emp ID" could not be parsed to an integer, don´t import the employee
+                            $errorEntries[] = $totalRows;
                             continue;
                         }
                         $this->em->persist($employee);
                         $existingEmployee ? $updates++ : $inserts++;
 
-                        $counter++;
-                        if ($counter == 1000) {
+                        $cacheCounter++;
+                        if ($cacheCounter == 1000) {
                             // to avoid cache problems in large csv-files flush database in between every 1000 imports
                             $this->em->flush();
-                            $counter = 0;
+                            $cacheCounter = 0;
                             $this->em->clear();
-
                         }
                     } else {
-                        $errorEntries[] = $record['Emp ID'];
+                        $errorEntries[] = $totalRows;
                     }
                 } catch (Exception $e) {
                     return $this->json(['msg' => 'error when parsing employee with id ' . $record['Emp ID']], 400);
@@ -67,11 +69,10 @@ class EmployeeImportController extends AbstractController
             }
             $this->em->flush();
         }
-        if (sizeof($skippedEmployees) === 0 && sizeof($errorEntries) === 0){
+        if (sizeof($errorEntries) === 0){
             return $this->json(['msg' => 'Successfully imported employee data, inserting ' . $inserts .' employees and updating ' . $updates]);
         } else {
-            return $this->json((['msg' => 'successfully imported employee data, skipped some rows due to duplicate or wrong employee-IDs',
-                'duplicates' => json_encode($skippedEmployees),
+            return $this->json((['msg' => 'successfully imported employee data, skipped some rows due to errors when importing. You can find a list of rows leading to errors attached',
                 'errors' => json_encode($errorEntries)]));
         }
     }

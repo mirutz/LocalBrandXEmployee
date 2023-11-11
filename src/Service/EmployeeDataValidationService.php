@@ -4,6 +4,7 @@ namespace App\Service;
 
 use App\Entity\Employee;
 use DateTime;
+use ValueError;
 
 class EmployeeDataValidationService
 {
@@ -11,7 +12,20 @@ class EmployeeDataValidationService
     private const DATE_FORMAT = 'm/d/Y';
     private const TIME_FORMAT = 'h:i:s A';
 
-    public function parseAndValidate($data, ?Employee $existingEmployee): Employee|false
+    /**
+     * @param array $data The employee-data, given as an array with strings as keys
+     * @param Employee|null $existingEmployee If given, the employee will be updated instead of creating a new one
+     * @return Employee|false Employee if a new employee was created or an existing one was updated
+     * Returns false in case any of the required data is not set. Required fields in $data are:
+     * [
+     *  "Emp ID", "Name Prefix", "First Name", "Middle Initial", "Last Name", "Gender",
+     *  "E Mail", "Date of Birth", "Time of Birth", "Age in Yrs.", "Date of Joining",
+     *  "Age in Company (Years)", "Phone No.", "Place Name",
+     *  "County", "City", "Zip", "Region", "User Name"
+     * ]
+     *
+     */
+    public function parseAndValidate(array $data, ?Employee $existingEmployee): Employee|false
     {
         try {
             if (isset(
@@ -64,7 +78,7 @@ class EmployeeDataValidationService
                 $employee->setUserName($data['User Name']);
                 return $employee;
             }
-        } catch (\ValueError) {
+        } catch (ValueError) {
             return false;
         }
 

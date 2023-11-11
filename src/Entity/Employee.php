@@ -22,7 +22,7 @@ use Doctrine\ORM\Mapping as ORM;
             controller: EmployeeImportController::class
         )
     ],
-    formats: ['json']
+    formats: ['json',  'csv' => ['text/csv']]
 )]
 #[ORM\Entity(repositoryClass: EmployeeRepository::class)]
 class Employee
